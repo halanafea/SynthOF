@@ -1,5 +1,6 @@
 #include "ofApp.h"
 #include "SineOscillator.h"
+#include <cctype>
 
 void ofApp::setup() {
 	ofBackground(15, 15, 25);
@@ -73,22 +74,24 @@ void ofApp::drawButtons() {
 }
 
 void ofApp::drawWaveform() {
-
 	float panelX = 40, panelY = 190, panelW = 520, panelH = 200;
 
 	ofSetColor(25, 25, 40);
 	ofDrawRectRounded(panelX, panelY, panelW, panelH, 8);
 
-	auto samples = synth.getRecentSamples(); // was: const auto&
-
+	auto samples = synth.getRecentSamples();
 	if (samples.size() > 1) {
 		float xStep = panelW / samples.size();
 		float midY = panelY + panelH / 2.0f;
 
+		ofColor quietColor(90, 60, 200); // deep purple - low amplitude
+		ofColor loudColor(255, 90, 180); // bright pink - high amplitude
+
 		for (size_t i = 0; i < samples.size() - 1; i++) {
-			float t = static_cast<float>(i) / samples.size();
-			ofColor waveColor;
-			waveColor.setHsb(static_cast<unsigned char>(t * 255), 200, 255); // rainbow sweep
+			float amplitude = fabs(samples[i]); // 0.0 (silent) to ~1.0 (loud)
+			float blend = ofClamp(amplitude * 3.0f, 0.0f, 1.0f); // amplify small values so color shows clearly
+
+			ofColor waveColor = quietColor.getLerped(loudColor, blend);
 			ofSetColor(waveColor);
 			ofSetLineWidth(2);
 
@@ -112,14 +115,50 @@ void ofApp::handleClick(int x, int y, bool pressed) {
 	}
 }
 
-void ofApp::keyPressed(int key) {
+/** void ofApp::keyPressed(int key) {
 	synth.noteOn(static_cast<char>(key));
 }
 
 void ofApp::keyReleased(int key) {
 	synth.noteOff(static_cast<char>(key));
+}*/
+
+/* void ofApp::keyPressed(int key) {
+
+	 std::cout << "Key pressed: " << key << std::endl;
+
+	char k = tolower(static_cast<char>(key));
+	if (k == 'a' || k == 's' || k == 'd') {
+		synth.noteOn(k);
+	}
 }
 
+void ofApp::keyReleased(int key) {
+	char k = tolower(static_cast<char>(key));
+	if (k == 'a' || k == 's' || k == 'd') {
+		synth.noteOff(k);
+	}
+}*/
+
+void ofApp::keyPressed(int key) {
+	if (key == 'a' || key == 'A') {
+		synth.noteOn('a');
+	} else if (key == 's' || key == 'S') {
+		synth.noteOn('s');
+	} else if (key == 'd' || key == 'D') {
+		synth.noteOn('d');
+	}
+}
+
+void ofApp::keyReleased(int key) {
+	if (key == 'a' || key == 'A') {
+		synth.noteOff('a');
+	} else if (key == 's' || key == 'S') {
+		synth.noteOff('s');
+	} else if (key == 'd' || key == 'D') {
+		synth.noteOff('d');
+	}
+}
 void ofApp::mousePressed(int x, int y, int button) {
 	handleClick(x, y, true);
 }
