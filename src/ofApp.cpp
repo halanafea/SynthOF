@@ -2,11 +2,16 @@
 #include "SineOscillator.h"
 
 void ofApp::setup() {
-	ofBackground(20);
+	ofBackground(15, 15, 25);
 	ofSetWindowTitle("Synth - Phase 1");
 
-	// Register one key -> one sound for Phase 1
-	synth.addVoice('a', std::make_unique<SineOscillator>(), 440.0f); // A4
+	synth.addVoice('a', std::make_unique<SineOscillator>(), 440.0f); // A4 - working
+
+	buttons = {
+		{ 'a', "A - Sine", ofColor(90, 220, 160), ofRectangle(40, 60, 160, 90) },
+		{ 's', "S - Square", ofColor(150, 120, 230), ofRectangle(220, 60, 160, 90) },
+		{ 'd', "D - Saw", ofColor(230, 140, 70), ofRectangle(400, 60, 160, 90) },
+	};
 
 	ofSoundStreamSettings settings;
 	settings.setOutListener(this);
@@ -30,20 +35,79 @@ void ofApp::update() { }
 
 void ofApp::draw() {
 	ofSetColor(255);
-	ofDrawBitmapString("Press and hold A to play a sine tone", 20, 20);
+	ofDrawBitmapString("Press A, S, or D  |  or click a button below", 40, 30);
 
-	// Basic waveform visualization
-	ofSetColor(120, 220, 160);
-	const auto & samples = synth.getRecentSamples();
+	drawButtons();
+	drawWaveform();
+}
+
+void ofApp::drawButtons() {
+	for (const auto & btn : buttons) {
+		bool implemented = synth.hasVoice(btn.key);
+		bool active = synth.isKeyActive(btn.key);
+
+		ofColor fill = btn.color;
+		if (!implemented) {
+			fill = ofColor(60, 60, 70); // dimmed - not built yet
+		} else if (active) {
+			fill.a = 255;
+		} else {
+			fill.a = 160; // implemented but idle
+		}
+
+		ofSetColor(fill);
+		ofFill();
+		ofDrawRectRounded(btn.bounds, 10);
+
+		ofSetColor(implemented ? ofColor(20, 20, 20) : ofColor(140, 140, 140));
+		ofDrawBitmapString(btn.label, btn.bounds.x + 14, btn.bounds.y + btn.bounds.height / 2);
+
+		if (active) {
+			ofNoFill();
+			ofSetColor(255);
+			ofSetLineWidth(2);
+			ofDrawRectRounded(btn.bounds, 10);
+			ofFill();
+		}
+	}
+}
+
+void ofApp::drawWaveform() {
+
+	float panelX = 40, panelY = 190, panelW = 520, panelH = 200;
+
+	ofSetColor(25, 25, 40);
+	ofDrawRectRounded(panelX, panelY, panelW, panelH, 8);
+
+	auto samples = synth.getRecentSamples(); // was: const auto&
+
 	if (samples.size() > 1) {
-		float xStep = static_cast<float>(ofGetWidth()) / samples.size();
-		float midY = ofGetHeight() / 2.0f;
+		float xStep = panelW / samples.size();
+		float midY = panelY + panelH / 2.0f;
+
 		for (size_t i = 0; i < samples.size() - 1; i++) {
-			float x1 = i * xStep;
-			float y1 = midY + samples[i] * 150.0f;
-			float x2 = (i + 1) * xStep;
-			float y2 = midY + samples[i + 1] * 150.0f;
+			float t = static_cast<float>(i) / samples.size();
+			ofColor waveColor;
+			waveColor.setHsb(static_cast<unsigned char>(t * 255), 200, 255); // rainbow sweep
+			ofSetColor(waveColor);
+			ofSetLineWidth(2);
+
+			float x1 = panelX + i * xStep;
+			float y1 = midY + samples[i] * (panelH / 2.5f);
+			float x2 = panelX + (i + 1) * xStep;
+			float y2 = midY + samples[i + 1] * (panelH / 2.5f);
 			ofDrawLine(x1, y1, x2, y2);
+		}
+	}
+}
+
+void ofApp::handleClick(int x, int y, bool pressed) {
+	for (const auto & btn : buttons) {
+		if (btn.bounds.inside(x, y)) {
+			if (pressed)
+				synth.noteOn(btn.key);
+			else
+				synth.noteOff(btn.key);
 		}
 	}
 }
@@ -54,4 +118,12 @@ void ofApp::keyPressed(int key) {
 
 void ofApp::keyReleased(int key) {
 	synth.noteOff(static_cast<char>(key));
+}
+
+void ofApp::mousePressed(int x, int y, int button) {
+	handleClick(x, y, true);
+}
+
+void ofApp::mouseReleased(int x, int y, int button) {
+	handleClick(x, y, false);
 }

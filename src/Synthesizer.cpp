@@ -25,14 +25,27 @@ float Synthesizer::getNextSample(float sampleRate) {
 		mixed += entry.voice->getNextSample(sampleRate);
 	}
 
-	recentSamples_.push_back(mixed);
-	if (recentSamples_.size() > kRecentBufferSize) {
-		recentSamples_.erase(recentSamples_.begin());
+	{
+		std::lock_guard<std::mutex> lock(sampleMutex_);
+		recentSamples_.push_back(mixed);
+		if (recentSamples_.size() > kRecentBufferSize) {
+			recentSamples_.erase(recentSamples_.begin());
+		}
 	}
 
 	return mixed;
 }
 
-const std::vector<float> & Synthesizer::getRecentSamples() const {
-	return recentSamples_;
+std::vector<float> Synthesizer::getRecentSamples() const {
+	std::lock_guard<std::mutex> lock(sampleMutex_);
+	return recentSamples_; // returns a safe copy while holding the lock briefly
+}
+
+bool Synthesizer::hasVoice(char key) const {
+	return voices_.find(key) != voices_.end();
+}
+
+bool Synthesizer::isKeyActive(char key) const {
+	auto it = voices_.find(key);
+	return it != voices_.end() && it->second.voice->isActive();
 }

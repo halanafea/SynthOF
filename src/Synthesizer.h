@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <mutex>
 
 class Synthesizer {
 public:
@@ -13,7 +14,11 @@ public:
 	float getNextSample(float sampleRate);
 
 	// For visualization: the most recent chunk of mixed output
-	const std::vector<float> & getRecentSamples() const;
+	//const std::vector<float> & getRecentSamples() const;
+	std::vector<float> getRecentSamples() const; // now returns a snapshot copy, not a reference
+
+	bool hasVoice(char key) const;
+	bool isKeyActive(char key) const;
 
 private:
 	struct VoiceEntry {
@@ -24,5 +29,9 @@ private:
 	std::map<char, VoiceEntry> voices_; // Synthesizer owns every Voice - composition
 	std::vector<float> recentSamples_;
 	static constexpr size_t kRecentBufferSize = 512;
+
+	mutable std::mutex sampleMutex_;
+
+
 };
 
