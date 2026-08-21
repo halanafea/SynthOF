@@ -1,5 +1,6 @@
 #pragma once
 #include "Oscillator.h"
+#include <atomic>
 #include <memory>
 
 class Voice {
@@ -13,6 +14,6 @@ public:
 
 private:
 	std::unique_ptr<Oscillator> oscillator_; // Voice owns its oscillator
-	bool active_ = false;
+	std::atomic<float> frequencyHz_ { 0.0f };
+	std::atomic<bool> active_ { false };
 };
-
