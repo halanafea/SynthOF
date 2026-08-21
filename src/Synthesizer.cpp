@@ -25,20 +25,25 @@ float Synthesizer::getNextSample(float sampleRate) {
 		mixed += entry.voice->getNextSample(sampleRate);
 	}
 
-	{
-		std::lock_guard<std::mutex> lock(sampleMutex_);
-		recentSamples_.push_back(mixed);
-		if (recentSamples_.size() > kRecentBufferSize) {
-			recentSamples_.erase(recentSamples_.begin());
-		}
-	}
+	// If the UI falls behind, drop visualization data rather than blocking the
+	// real-time audio callback. Audio generation itself is never interrupted.
+	waveformSamples_.push(mixed);
 
 	return mixed;
 }
 
 std::vector<float> Synthesizer::getRecentSamples() const {
-	std::lock_guard<std::mutex> lock(sampleMutex_);
-	return recentSamples_; // returns a safe copy while holding the lock briefly
+	float sample = 0.0f;
+	while (waveformSamples_.pop(sample)) {
+		recentSamples_.push_back(sample);
+	}
+
+	if (recentSamples_.size() > kRecentBufferSize) {
+		recentSamples_.erase(
+			recentSamples_.begin(),
+			recentSamples_.end() - kRecentBufferSize);
+	}
+	return recentSamples_;
 }
 
 bool Synthesizer::hasVoice(char key) const {
