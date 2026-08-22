@@ -1,5 +1,7 @@
 #include "ofApp.h"
+#include "SawOscillator.h"
 #include "SineOscillator.h"
+#include "SquareOscillator.h"
 #include <cctype>
 
 void ofApp::setup() {
@@ -7,6 +9,8 @@ void ofApp::setup() {
 	ofSetWindowTitle("Synth - Phase 1");
 
 	synth.addVoice('a', std::make_unique<SineOscillator>(), 440.0f); // A4 - working
+	synth.addVoice('s', std::make_unique<SquareOscillator>(), 493.88f); // B4
+	synth.addVoice('d', std::make_unique<SawOscillator>(), 523.25f); // C5
 
 	buttons = {
 		{ 'a', "A - Sine", ofColor(90, 220, 160), ofRectangle(40, 60, 160, 90) },
