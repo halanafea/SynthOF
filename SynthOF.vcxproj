@@ -234,6 +234,7 @@
     <ClCompile Include="src\SquareOscillator.cpp" />
     <ClCompile Include="src\Synthesizer.cpp" />
     <ClCompile Include="src\Voice.cpp" />
+    <ClCompile Include="src\WaveformRingBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ofApp.h" />
@@ -243,6 +244,7 @@
     <ClInclude Include="src\SquareOscillator.h" />
     <ClInclude Include="src\Synthesizer.h" />
     <ClInclude Include="src\Voice.h" />
+    <ClInclude Include="src\WaveformRingBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(OF_ROOT)\libs\openFrameworksCompiled\project\vs\openframeworksLib.vcxproj">

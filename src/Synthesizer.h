@@ -1,9 +1,9 @@
 #pragma once
 #include "Voice.h"
+#include "WaveformRingBuffer.h"
 #include <map>
 #include <memory>
 #include <vector>
-#include <mutex>
 
 class Synthesizer {
 public:
@@ -27,11 +27,7 @@ private:
 	};
 
 	std::map<char, VoiceEntry> voices_; // Synthesizer owns every Voice - composition
-	std::vector<float> recentSamples_;
+	mutable WaveformRingBuffer waveformSamples_;
+	mutable std::vector<float> recentSamples_;
 	static constexpr size_t kRecentBufferSize = 512;
-
-	mutable std::mutex sampleMutex_;
-
-
 };
-

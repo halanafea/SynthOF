@@ -1,4 +1,5 @@
 #include "Synthesizer.h"
+#include <algorithm>
 
 void Synthesizer::addVoice(char key, std::unique_ptr<Oscillator> oscillator, float frequencyHz) {
 	auto voice = std::make_unique<Voice>(std::move(oscillator));
@@ -25,20 +26,33 @@ float Synthesizer::getNextSample(float sampleRate) {
 		mixed += entry.voice->getNextSample(sampleRate);
 	}
 
-	{
-		std::lock_guard<std::mutex> lock(sampleMutex_);
-		recentSamples_.push_back(mixed);
-		if (recentSamples_.size() > kRecentBufferSize) {
-			recentSamples_.erase(recentSamples_.begin());
-		}
+	// Reserve equal headroom for every registered voice so pressing several
+	// keys cannot make their summed output proportionally louder. Clamp as a
+	// final safety net in case a future oscillator exceeds its nominal range.
+	if (!voices_.empty()) {
+		mixed /= static_cast<float>(voices_.size());
 	}
+	mixed = std::clamp(mixed, -1.0f, 1.0f);
+
+	// If the UI falls behind, drop visualization data rather than blocking the
+	// real-time audio callback. Audio generation itself is never interrupted.
+	waveformSamples_.push(mixed);
 
 	return mixed;
 }
 
 std::vector<float> Synthesizer::getRecentSamples() const {
-	std::lock_guard<std::mutex> lock(sampleMutex_);
-	return recentSamples_; // returns a safe copy while holding the lock briefly
+	float sample = 0.0f;
+	while (waveformSamples_.pop(sample)) {
+		recentSamples_.push_back(sample);
+	}
+
+	if (recentSamples_.size() > kRecentBufferSize) {
+		recentSamples_.erase(
+			recentSamples_.begin(),
+			recentSamples_.end() - kRecentBufferSize);
+	}
+	return recentSamples_;
 }
 
 bool Synthesizer::hasVoice(char key) const {
