@@ -1,4 +1,5 @@
 #include "Synthesizer.h"
+#include <algorithm>
 
 void Synthesizer::addVoice(char key, std::unique_ptr<Oscillator> oscillator, float frequencyHz) {
 	auto voice = std::make_unique<Voice>(std::move(oscillator));
@@ -24,6 +25,14 @@ float Synthesizer::getNextSample(float sampleRate) {
 	for (auto & [key, entry] : voices_) {
 		mixed += entry.voice->getNextSample(sampleRate);
 	}
+
+	// Reserve equal headroom for every registered voice so pressing several
+	// keys cannot make their summed output proportionally louder. Clamp as a
+	// final safety net in case a future oscillator exceeds its nominal range.
+	if (!voices_.empty()) {
+		mixed /= static_cast<float>(voices_.size());
+	}
+	mixed = std::clamp(mixed, -1.0f, 1.0f);
 
 	// If the UI falls behind, drop visualization data rather than blocking the
 	// real-time audio callback. Audio generation itself is never interrupted.
