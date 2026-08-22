@@ -6,14 +6,8 @@ This branch completes the existing A/S/D synthesizer:
 - S — square, 493.88 Hz
 - D — saw, 523.25 Hz
 
-## Windows
-
-1. Use openFrameworks 0.12.1 and Visual Studio with Desktop Development with
-   C++.
-2. Place the repository under openFrameworks `apps/myApps`.
-3. Open `SynthOF.sln`.
-4. Retarget the toolset if Visual Studio requests it.
-5. Build with `Ctrl+Shift+B` and run with `F5`.
+Platform-specific application prerequisites and build steps are documented in
+[`BUILDING.md`](BUILDING.md) for Windows, macOS, and Linux.
 
 ## Manual test
 
