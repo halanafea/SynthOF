@@ -1,4 +1,5 @@
 #include "Voice.h"
+#include <algorithm>
 
 Voice::Voice(std::unique_ptr<Oscillator> oscillator)
 	: oscillator_(std::move(oscillator)) {
@@ -18,9 +19,20 @@ bool Voice::isActive() const {
 }
 
 float Voice::getNextSample(float sampleRate) {
-	if (!active_.load(std::memory_order_acquire)) {
+	const bool active = active_.load(std::memory_order_acquire);
+	if (!active && envelopeLevel_ <= 0.0f) {
 		return 0.0f;
 	}
+
+	const float safeSampleRate = std::max(sampleRate, 1.0f);
+	if (active) {
+		envelopeLevel_ = std::min(
+			1.0f, envelopeLevel_ + 1.0f / (kAttackSeconds * safeSampleRate));
+	} else {
+		envelopeLevel_ = std::max(
+			0.0f, envelopeLevel_ - 1.0f / (kReleaseSeconds * safeSampleRate));
+	}
+
 	oscillator_->setFrequency(frequencyHz_.load(std::memory_order_relaxed));
-	return oscillator_->getNextSample(sampleRate);
+	return oscillator_->getNextSample(safeSampleRate) * envelopeLevel_;
 }

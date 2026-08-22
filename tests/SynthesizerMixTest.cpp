@@ -22,7 +22,8 @@ bool near(float actual, float expected) {
 
 int main() {
 	Synthesizer synth;
-	assert(near(synth.getNextSample(44100.0f), 0.0f));
+	constexpr float sampleRate = 1000.0f;
+	assert(near(synth.getNextSample(sampleRate), 0.0f));
 
 	synth.addVoice('a', std::make_unique<ConstantOscillator>(1.0f), 440.0f);
 	synth.addVoice('s', std::make_unique<ConstantOscillator>(1.0f), 493.88f);
@@ -31,20 +32,32 @@ int main() {
 
 	synth.noteOn('a');
 	assert(synth.isKeyActive('a'));
-	assert(near(synth.getNextSample(44100.0f), 1.0f / 3.0f));
+	for (int sample = 0; sample < 5; ++sample) {
+		synth.getNextSample(sampleRate);
+	}
+	assert(near(synth.getNextSample(sampleRate), 1.0f / 3.0f));
 
 	synth.noteOn('s');
 	synth.noteOn('d');
-	assert(near(synth.getNextSample(44100.0f), 1.0f));
+	for (int sample = 0; sample < 5; ++sample) {
+		synth.getNextSample(sampleRate);
+	}
+	assert(near(synth.getNextSample(sampleRate), 1.0f));
 
 	synth.noteOff('a');
 	assert(!synth.isKeyActive('a'));
-	assert(near(synth.getNextSample(44100.0f), 2.0f / 3.0f));
+	for (int sample = 0; sample < 20; ++sample) {
+		synth.getNextSample(sampleRate);
+	}
+	assert(near(synth.getNextSample(sampleRate), 2.0f / 3.0f));
 
 	Synthesizer limited;
 	limited.addVoice('a', std::make_unique<ConstantOscillator>(4.0f), 440.0f);
 	limited.noteOn('a');
-	assert(near(limited.getNextSample(44100.0f), 1.0f));
+	for (int sample = 0; sample < 5; ++sample) {
+		limited.getNextSample(sampleRate);
+	}
+	assert(near(limited.getNextSample(sampleRate), 1.0f));
 
 	const auto recent = limited.getRecentSamples();
 	assert(!recent.empty());
