@@ -26,3 +26,15 @@ This branch completes the existing A/S/D synthesizer:
 
 Expected result: all three distinct sounds work through both keyboard and mouse
 controls using the original Team Alligator interface.
+
+## Automated core tests
+
+The core tests do not require openFrameworks. From the repository root:
+
+```text
+cmake -S . -B build -DBUILD_TESTING=ON
+cmake --build build --config Release
+ctest --test-dir build --build-config Release --output-on-failure
+```
+
+The same test target runs on Ubuntu and Windows for every push and pull request.
